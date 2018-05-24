@@ -1,7 +1,9 @@
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
 const {models} = require("../models");
-
+let score=0;
+let toBePlayed=[];
+let porcontestar =0;
 const paginate = require('../helpers/paginate').paginate;
 
 // Autoload the quiz with id equals to :quizId
