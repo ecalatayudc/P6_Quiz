@@ -78,7 +78,7 @@ exports.index = (req, res, next) => {
         res.locals.paginate_control = paginate(count, items_per_page, pageno, req.url);
 
         const findOptions = {
-            ...countOptions,
+            countOptions,
             offset: items_per_page * (pageno - 1),
             limit: items_per_page,
             include: [{model: models.user, as: 'author'}]
@@ -209,7 +209,38 @@ exports.play = (req, res, next) => {
         answer
     });
 };
+exports.randomplay = (req, res, next) => {
 
+    const  {query} = req;
+
+    const answer = query.answer || '';
+    
+    
+    models.quiz.findAll({raw: true})
+    .then(quizzes => {
+        if(porcontestar===0){
+        score=0;
+        req.session.randomPlay = quizzes;
+        }else if(req.session.randomPlay.length<=0){
+        porcontestar=0;
+        res.render('quizzes/randomnomore',{score});
+        }
+    })
+    .then( () =>{
+
+        let pos =Math.floor(Math.random()*req.session.randomPlay.length)
+        let quiz = req.session.randomPlay[pos];
+        req.session.randomPlay.splice(pos,1);
+        res.render('quizzes/randomplay', {
+        quiz,
+        score,
+        answer
+        });
+        
+        
+    })
+    .catch(error => next(error));
+};
 
 // GET /quizzes/:quizId/check
 exports.check = (req, res, next) => {
@@ -224,4 +255,30 @@ exports.check = (req, res, next) => {
         result,
         answer
     });
+};
+exports.randomcheck = (req, res, next) => {
+
+    const {quiz, query} = req;
+
+    const answer = query.answer || "";
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+    if (result){
+    score++;
+    porcontestar++;
+    res.render('quizzes/randomresult', {
+        quiz,
+        result,
+        answer,
+        score
+    });
+    }else{
+      porcontestar=0;
+      res.render('quizzes/randomresult', {
+        quiz,
+        result,
+        answer,
+        score
+    });
+    score=0; 
+    }
 };
