@@ -74,3 +74,43 @@ exports.destroy = (req, res, next) => {
     .catch(error => next(error));
 };
 
+exports.adminOrAuthorRequired = (req, res, next) => {
+
+    const isAdmin  = !!req.session.user.isAdmin;
+    const isAuthor = req.tip.authorId === req.session.user.id;
+
+    if (isAdmin || isAuthor) {
+        next();
+    } else {
+        console.log('Prohibited operation: The logged in user is not the author of the quiz, nor an administrator.');
+        res.send(403);
+    }
+};
+exports.edit = (req, res, next) => {
+
+    const {quiz} = req;
+
+    res.render('quizzes/edit', {quiz});
+};
+exports.update = (req, res, next) => {
+
+    const {quiz, body} = req;
+
+    quiz.question = body.question;
+    quiz.answer = body.answer;
+
+    quiz.save({fields: ["question", "answer"]})
+    .then(quiz => {
+        req.flash('success', 'Quiz edited successfully.');
+        res.redirect('/quizzes/' + quiz.id);
+    })
+    .catch(Sequelize.ValidationError, error => {
+        req.flash('error', 'There are errors in the form:');
+        error.errors.forEach(({message}) => req.flash('error', message));
+        res.render('quizzes/edit', {quiz});
+    })
+    .catch(error => {
+        req.flash('error', 'Error editing the Quiz: ' + error.message);
+        next(error);
+    });
+};
